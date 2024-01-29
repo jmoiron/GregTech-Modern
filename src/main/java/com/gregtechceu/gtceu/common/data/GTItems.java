@@ -151,31 +151,14 @@ public class GTItems {
     public static void generateTools() {
         REGISTRATE.creativeModeTab(() -> TOOL);
 
-        HashMultimap<Integer, Tuple<ResourceLocation, Tier>> tiers = HashMultimap.create();
-        for (Tier tier : Tiers.values()) {
-            tiers.put(tier.getLevel(), new Tuple<>(getTierName(tier), tier));
-        }
+        for (GTToolType toolType : GTToolType.getTypes().values()) {
+            for (MaterialRegistry registry : GTCEuAPI.materialManager.getRegistries()) {
+                GTRegistrate registrate = registry.getRegistrate();
+                for (Material material : registry.getAllMaterials()) {
+                    if (material.hasProperty(PropertyKey.TOOL)) {
+                        var property = material.getProperty(PropertyKey.TOOL);
+                        var tier = material.getToolTier();
 
-        for (MaterialRegistry registry : GTCEuAPI.materialManager.getRegistries()) {
-            GTRegistrate registrate = registry.getRegistrate();
-
-            for (Material material : registry.getAllMaterials()) {
-                if (material.hasProperty(PropertyKey.TOOL)) {
-                    var tier = material.getToolTier();
-                    tiers.put(tier.getLevel(), new Tuple<>(material.getResourceLocation(), tier));
-                }
-            }
-
-            for (Material material : registry.getAllMaterials()) {
-                if (material.hasProperty(PropertyKey.TOOL)) {
-                    var property = material.getProperty(PropertyKey.TOOL);
-                    var tier = material.getToolTier();
-
-                    List<ResourceLocation> lower = tiers.values().stream().filter(low -> low.getB().getLevel() == tier.getLevel() - 1).map(Tuple::getA).toList();
-                    List<ResourceLocation> higher = tiers.values().stream().filter(high -> high.getB().getLevel() == tier.getLevel() + 1).map(Tuple::getA).toList();
-                    registerToolTier(tier, material.getResourceLocation(), lower, higher);
-
-                    for (GTToolType toolType : GTToolType.getTypes().values()) {
                         if (property.hasType(toolType)) {
                             TOOL_ITEMS.put(material, toolType, (ItemProviderEntry<IGTTool>) (ItemProviderEntry<?>) registrate.item(toolType.idFormat.formatted(tier.material.getName()), p -> toolType.constructor.apply(toolType, tier, material, toolType.toolDefinition, p).asItem())
                                 .properties(p -> p.craftRemainder(Items.AIR))
@@ -1321,6 +1304,13 @@ public class GTItems {
     public static ItemEntry<Item> COMPONENT_GRINDER_DIAMOND = REGISTRATE.item("diamond_grinding_head", Item::new).lang("Diamond Grinding Head").onRegister(materialInfo(new ItemMaterialInfo(new MaterialStack(GTMaterials.Steel, GTValues.M * 8), new MaterialStack(GTMaterials.Diamond, GTValues.M * 5)))).onRegister(compassNode(GTCompassSections.MISC)).register();
     public static ItemEntry<Item> COMPONENT_GRINDER_TUNGSTEN = REGISTRATE.item("tungsten_grinding_head", Item::new).lang("Tungsten Grinding Head").onRegister(materialInfo(new ItemMaterialInfo(new MaterialStack(GTMaterials.Tungsten, GTValues.M * 4), new MaterialStack(GTMaterials.VanadiumSteel, GTValues.M * 8), new MaterialStack(GTMaterials.Diamond, GTValues.M)))).onRegister(compassNode(GTCompassSections.MISC)).register();
 
+    public static ItemEntry<Item> IRON_MINECART_WHEELS = REGISTRATE.item("iron_minecart_wheels", Item::new)
+        .onRegister(materialInfo(new ItemMaterialInfo(new MaterialStack(GTMaterials.Iron, GTValues.M))))
+        .register();
+    public static ItemEntry<Item> STEEL_MINECART_WHEELS = REGISTRATE.item("steel_minecart_wheels", Item::new)
+        .onRegister(materialInfo(new ItemMaterialInfo(new MaterialStack(GTMaterials.Steel, GTValues.M))))
+        .register();
+
     public static ItemEntry<Item> QUANTUM_EYE = REGISTRATE.item("quantum_eye", Item::new).lang("Quantum Eye").onRegister(compassNode(GTCompassSections.MISC)).register();
     public static ItemEntry<Item> QUANTUM_STAR = REGISTRATE.item("quantum_star", Item::new).lang("Quantum Star").onRegister(compassNode(GTCompassSections.MISC)).register();
     public static ItemEntry<Item> GRAVI_STAR = REGISTRATE.item("gravi_star", Item::new).lang("Gravi-Star").onRegister(compassNode(GTCompassSections.MISC)).register();
@@ -1758,7 +1748,7 @@ public class GTItems {
     }
 
     public static void registerToolTier(MaterialToolTier tier, ResourceLocation id, Collection<ResourceLocation> before, Collection<ResourceLocation> after) {
-        TierSortingRegistry.registerTier(tier, id, Arrays.asList(before.toArray(ResourceLocation[]::new)), Arrays.asList(after.toArray(ResourceLocation[]::new)));
+        TierSortingRegistry.registerTier(tier, id, Arrays.asList((Object[]) before.toArray(ResourceLocation[]::new)), Arrays.asList((Object[]) after.toArray(ResourceLocation[]::new)));
     }
 
     public static ResourceLocation getTierName(Tier tier) {

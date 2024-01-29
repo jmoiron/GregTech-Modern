@@ -3,7 +3,6 @@ package com.gregtechceu.gtceu.api.item.tool;
 import com.google.common.collect.Multimap;
 import com.gregtechceu.gtceu.api.data.chemical.material.Material;
 import com.gregtechceu.gtceu.api.item.IGTTool;
-import com.gregtechceu.gtceu.api.item.IItemUseFirst;
 import com.gregtechceu.gtceu.api.sound.SoundEntry;
 import com.gregtechceu.gtceu.client.renderer.item.ToolItemRenderer;
 import com.lowdragmc.lowdraglib.Platform;
@@ -34,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Set;
 
-public class GTSwordItem extends SwordItem implements IItemUseFirst, IGTTool {
+public class GTSwordItem extends SwordItem implements IGTTool {
 
     @Getter
     private final GTToolType toolType;
@@ -77,11 +76,6 @@ public class GTSwordItem extends SwordItem implements IItemUseFirst, IGTTool {
     }
 
     @Override
-    public MaterialToolTier getTier() {
-        return (MaterialToolTier) super.getTier();
-    }
-
-    @Override
     public boolean hasCraftingRemainingItem() {
         return super.hasCraftingRemainingItem();
     }
@@ -103,7 +97,7 @@ public class GTSwordItem extends SwordItem implements IItemUseFirst, IGTTool {
 
     @Override
     public Component getDescription() {
-        return Component.translatable(toolType.getUnlocalizedName(), getTier().material.getLocalizedName());
+        return Component.translatable(toolType.getUnlocalizedName(), material.getLocalizedName());
     }
 
     @Override
@@ -174,7 +168,8 @@ public class GTSwordItem extends SwordItem implements IItemUseFirst, IGTTool {
         return definition$isValidRepairItem(stack, repairCandidate);
     }
 
-    public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot, ItemStack stack) {
+    @Override
+    public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot, ItemStack stack) {
         return definition$getDefaultAttributeModifiers(slot, stack);
     }
 

@@ -142,6 +142,7 @@ public class LangHandler {
         provider.add("gtceu.tool.class.rolling_pin", "Rolling Pin");
         provider.add("gtceu.tool.class.plunger", "Plunger");
         provider.add("gtceu.tool.class.shears", "Shears");
+        provider.add("gtceu.tool.class.drill", "Drill");
 
         provider.add("item.gtceu.tool.replace_tool_head", "Craft with a new Tool Head to replace it");
         provider.add("item.gtceu.tool.usable_as", "§8Usable as: §f%s");
@@ -218,7 +219,7 @@ public class LangHandler {
         provider.add("item.gtceu.tool.tooltip.mining_speed", "%s §dMining Speed");
         provider.add("item.gtceu.tool.tooltip.harvest_level", "§eHarvest Level %s");
         provider.add("item.gtceu.tool.tooltip.harvest_level_extra", "§eHarvest Level %s §f(%s§f)");
-        multiLang(provider, "item.gtceu.tool.harvest_level", "§8Wood", "§7Stone", "§aIron", "§bDiamond", "§dUltimet", "§9Duranium", "§cNeutronium");
+        multiLang(provider, "item.gtceu.tool.harvest_level", "§8Wood", "§7Stone", "§aIron", "§bDiamond", "§dNetherite", "§9Duranium", "§cNeutronium");
         provider.add("item.gtceu.tool.tooltip.repair_info", "§8Hold SHIFT to show Repair Info");
         provider.add("item.gtceu.tool.tooltip.repair_material", "§8Repair with: §f§a%s");
         provider.add("item.gtceu.tool.aoe.rows", "Rows");
@@ -907,7 +908,7 @@ public class LangHandler {
         provider.add("gtceu.recipe.duration", "Duration: %,.2f secs");
         provider.add("gtceu.recipe.amperage", "Amperage: %,d");
         provider.add("gtceu.recipe.not_consumed", "Does not get consumed in the process");
-        provider.add("gtceu.recipe.chance", "Chance: %s%% +%s%%/tier");
+        provider.add("gtceu.recipe.chance", "Chance: %s +%s/tier");
         provider.add("gtceu.recipe.temperature", "Temperature: %,dK");
         provider.add("gtceu.recipe.temperature_and_coil", "Temp.: %,dK (%s)");
         provider.add("gtceu.recipe.explosive", "Explosive: %s");
@@ -1221,8 +1222,8 @@ public class LangHandler {
 
         provider.add("gtceu.gui.content.chance_0", "§cNot Consumed§r");
         provider.add("gtceu.gui.content.chance_0_short", "§cNC§r");
-        provider.add("gtceu.gui.content.chance_1", "§eChance: %s§r");
-        provider.add("gtceu.gui.content.tier_boost", "§eTier Chance: +%s/tier§r");
+        provider.add("gtceu.gui.content.chance_1", "Chance: %s%%");
+        provider.add("gtceu.gui.content.tier_boost", "Tier Chance: +%s%%/tier");
 
         provider.add("gtceu.gui.content.per_tick", "§aConsumed/Produced Per Tick§r");
         provider.add("gtceu.gui.content.tips.per_tick_short", "§a/tick§r");

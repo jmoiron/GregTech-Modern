@@ -15,7 +15,6 @@ import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.item.capability.ElectricItem;
 import com.gregtechceu.gtceu.api.item.component.ElectricStats;
-import com.gregtechceu.gtceu.api.item.component.IItemUIFactory;
 import com.gregtechceu.gtceu.api.item.component.forge.IComponentCapability;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
 import com.gregtechceu.gtceu.api.item.tool.IGTToolDefinition;
@@ -26,7 +25,6 @@ import com.gregtechceu.gtceu.api.item.tool.behavior.IToolBehavior;
 import com.gregtechceu.gtceu.api.sound.SoundEntry;
 import com.gregtechceu.gtceu.common.data.GTMaterials;
 import com.gregtechceu.gtceu.config.ConfigHolder;
-import com.gregtechceu.gtceu.core.ICraftRemainder;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 import com.gregtechceu.gtceu.utils.GTUtil;
 import com.gregtechceu.gtceu.utils.ModHandler;
@@ -49,6 +47,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -66,9 +65,11 @@ import net.minecraft.world.item.enchantment.MendingEnchantment;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.TierSortingRegistry;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
@@ -81,6 +82,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.gregtechceu.gtceu.api.item.tool.ToolHelper.*;
 import static net.minecraft.world.item.Item.BASE_ATTACK_DAMAGE_UUID;
@@ -93,8 +95,6 @@ public interface IGTTool extends HeldItemUIFactory.IHeldItemUIHolder, ItemLike {
     boolean isElectric();
 
     int getElectricTier();
-
-    Tier getTier();
 
     IGTToolDefinition getToolStats();
 
@@ -481,7 +481,7 @@ public interface IGTTool extends HeldItemUIFactory.IHeldItemUIHolder, ItemLike {
             return ItemStack.EMPTY;
         }
         stack = stack.copy();
-        Player player = ICraftRemainder.craftingPlayer.get();
+        Player player = ForgeHooks.getCraftingPlayer();
         damageItemWhenCrafting(stack, player);
         playCraftingSound(player, stack);
         // We cannot simply return the copied stack here because Forge's bug
@@ -683,8 +683,9 @@ public interface IGTTool extends HeldItemUIFactory.IHeldItemUIHolder, ItemLike {
 
         // valid tools
         tooltip.add(Component.translatable("item.gtceu.tool.usable_as",
-                getToolClasses(stack).stream()
-                        .map(s -> Component.translatable("gtceu.tool.class." + s.name))
+                getToolClassNames(stack).stream()
+                        .filter(s -> I18n.exists("gtceu.tool.class." + s))
+                        .map(s -> Component.translatable("gtceu.tool.class." + s))
                         .collect(Component::empty, FormattingUtil::combineComponents, FormattingUtil::combineComponents)
         ));
 
@@ -838,6 +839,10 @@ public interface IGTTool extends HeldItemUIFactory.IHeldItemUIHolder, ItemLike {
 
     Set<GTToolType> getToolClasses(ItemStack stack);
 
+    default Set<String> getToolClassNames(ItemStack stack) {
+        return getToolClasses(stack).stream().flatMap(type -> type.toolClassNames.stream()).collect(Collectors.toSet());
+    }
+
     @Nullable
     default ICapabilityProvider definition$initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
         List<ICapabilityProvider> providers = new ArrayList<>();
@@ -867,18 +872,19 @@ public interface IGTTool extends HeldItemUIFactory.IHeldItemUIHolder, ItemLike {
 
     default boolean definition$isCorrectToolForDrops(ItemStack stack, BlockState state) {
         if (stack.getItem() instanceof IGTTool gtTool) {
-            if (TierSortingRegistry.isTierSorted(gtTool.getTier())) {
-                return TierSortingRegistry.isCorrectTierForDrops(gtTool.getTier(), state) && gtTool.getToolClasses(stack).stream().anyMatch(type -> type.harvestTags.stream().anyMatch(state::is));
-            } else {
-                int i = gtTool.getTier().getLevel();
-                if (i < 3 && state.is(BlockTags.NEEDS_DIAMOND_TOOL)) {
-                    return false;
-                } else if (i < 2 && state.is(BlockTags.NEEDS_IRON_TOOL)) {
-                    return false;
-                } else {
-                    return i < 1 && state.is(BlockTags.NEEDS_STONE_TOOL) ? false : gtTool.getToolClasses(stack).stream().anyMatch(type -> type.harvestTags.stream().anyMatch(state::is));
-                }
+            boolean isCorrectToolType = gtTool.getToolClasses(stack).stream().anyMatch(type -> type.harvestTags.stream().anyMatch(state::is));
+            if (!isCorrectToolType) {
+                return false;
             }
+
+            final int totalLevel = gtTool.getTotalHarvestLevel(stack);
+            List<Tier> tiers = TierSortingRegistry.getSortedTiers().stream()
+                .filter(tier -> tier.getLevel() == totalLevel)
+                .toList();
+            Tier tier = !tiers.isEmpty() ? tiers.get(tiers.size() - 1) : null;
+
+            if (tier == null) return false;
+            return TierSortingRegistry.isCorrectTierForDrops(tier, state);
         }
         return stack.getItem().isCorrectToolForDrops(state);
     }
